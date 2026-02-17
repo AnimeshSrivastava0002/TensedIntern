@@ -5,6 +5,7 @@ import './Companyform.css';
 
 const CompanyForm = ({ onClose, initialData = null }) => {
   const { addApplication, updateApplication } = useAuth();
+  const isEditMode = Boolean(initialData?.id); // Only treat as edit if ID exists
   const [formData, setFormData] = useState({
     company_name: '',
     position_title: '',
@@ -33,6 +34,10 @@ const CompanyForm = ({ onClose, initialData = null }) => {
       ...prev,
       [name]: value
     }));
+    // Clear error when user starts typing
+    if (error) {
+      setError('');
+    }
   };
 
   const handleRatingChange = (rating) => {
@@ -44,35 +49,48 @@ const CompanyForm = ({ onClose, initialData = null }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+    
+    // Validate before proceeding
+    const company = formData.company_name.trim();
+    const position = formData.position_title.trim();
+    
+    if (!company || !position) {
+      setError('Company name and position title are required');
+      return;
+    }
+
+    setLoading(true);
 
     try {
-      if (!formData.company_name.trim() || !formData.position_title.trim()) {
-        setError('Company name and position title are required');
-        setLoading(false);
-        return;
-      }
+      const submitData = {
+        company_name: company,
+        position_title: position,
+        status: formData.status,
+        notes: formData.notes,
+        rating: formData.rating
+      };
 
-      if (initialData) {
+      if (isEditMode) {
         // Update existing application
-        const result = await updateApplication(initialData.id, formData);
+        const result = await updateApplication(initialData.id, submitData);
         if (!result.success) {
           setError(result.error);
+          setLoading(false);
           return;
         }
       } else {
         // Add new application
-        const result = await addApplication(formData);
+        const result = await addApplication(submitData);
         if (!result.success) {
           setError(result.error);
+          setLoading(false);
           return;
         }
       }
       onClose();
     } catch (err) {
       setError(err.message || 'Failed to save application');
-    } finally {
       setLoading(false);
     }
   };
@@ -83,7 +101,7 @@ const CompanyForm = ({ onClose, initialData = null }) => {
     <div className="form-overlay">
       <div className="form-modal">
         <div className="form-header">
-          <h3>{initialData ? 'Edit Application' : 'Add New Application'}</h3>
+          <h3>{isEditMode ? 'Edit Application' : 'Add New Application'}</h3>
           <button className="close-btn" onClick={onClose}>
             <X size={24} />
           </button>

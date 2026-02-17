@@ -57,9 +57,14 @@ router.get('/:id', authMiddleware, (req, res) => {
 // Create application
 router.post('/', authMiddleware, (req, res) => {
   try {
-    const { companyName, positionTitle, jobUrl, notes, rating } = req.body;
+    // Accept both camelCase and snake_case
+    const company_name = req.body.company_name || req.body.companyName;
+    const position_title = req.body.position_title || req.body.positionTitle;
+    const notes = req.body.notes;
+    const rating = req.body.rating;
+    const status = req.body.status || 'Applied';
 
-    if (!companyName || !positionTitle) {
+    if (!company_name || !position_title) {
       return res.status(400).json({ error: 'Company name and position are required' });
     }
 
@@ -68,11 +73,12 @@ router.post('/', authMiddleware, (req, res) => {
 
     db.run(
       `INSERT INTO job_applications 
-       (id, user_id, company_name, position_title, job_url, notes, rating, applied_date, status)
+       (id, user_id, company_name, position_title, notes, rating, created_at, updated_at, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [appId, req.userId, companyName, positionTitle, jobUrl || null, notes || null, rating || 0, appliedDate, 'Applied'],
+      [appId, req.userId, company_name, position_title, notes || null, rating || 0, appliedDate, appliedDate, status],
       function(err) {
         if (err) {
+          console.error('Database error:', err);
           return res.status(500).json({ error: 'Failed to create application' });
         }
 
@@ -81,18 +87,19 @@ router.post('/', authMiddleware, (req, res) => {
           application: {
             id: appId,
             user_id: req.userId,
-            company_name: companyName,
-            position_title: positionTitle,
-            job_url: jobUrl,
+            company_name: company_name,
+            position_title: position_title,
             notes,
             rating: rating || 0,
-            applied_date: appliedDate,
-            status: 'Applied'
+            created_at: appliedDate,
+            updated_at: appliedDate,
+            status: status
           }
         });
       }
     );
   } catch (error) {
+    console.error('Error creating application:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -100,26 +107,57 @@ router.post('/', authMiddleware, (req, res) => {
 // Update application
 router.put('/:id', authMiddleware, (req, res) => {
   try {
-    const { status, notes, rating } = req.body;
+    const { company_name, position_title, status, notes, rating } = req.body;
 
-    db.run(
-      `UPDATE job_applications 
-       SET status = ?, notes = ?, rating = ?, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = ? AND user_id = ?`,
-      [status || null, notes || null, rating || null, req.params.id, req.userId],
-      function(err) {
-        if (err) {
-          return res.status(500).json({ error: 'Failed to update application' });
-        }
+    // Allow updating company_name and position_title along with status, notes, rating
+    const updates = [];
+    const params = [];
 
-        if (this.changes === 0) {
-          return res.status(404).json({ error: 'Application not found' });
-        }
+    if (company_name !== undefined) {
+      updates.push('company_name = ?');
+      params.push(company_name);
+    }
+    if (position_title !== undefined) {
+      updates.push('position_title = ?');
+      params.push(position_title);
+    }
+    if (status !== undefined) {
+      updates.push('status = ?');
+      params.push(status);
+    }
+    if (notes !== undefined) {
+      updates.push('notes = ?');
+      params.push(notes);
+    }
+    if (rating !== undefined) {
+      updates.push('rating = ?');
+      params.push(rating);
+    }
 
-        res.json({ message: 'Application updated successfully' });
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    params.push(req.params.id);
+    params.push(req.userId);
+
+    const query = `UPDATE job_applications SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`;
+
+    db.run(query, params, function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Failed to update application' });
       }
-    );
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Application not found' });
+      }
+
+      res.json({ message: 'Application updated successfully' });
+    });
   } catch (error) {
+    console.error('Error updating application:', error);
     res.status(500).json({ error: error.message });
   }
 });
