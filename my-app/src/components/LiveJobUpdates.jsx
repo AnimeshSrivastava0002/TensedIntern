@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Briefcase, MapPin, Clock, Zap, TrendingUp } from 'lucide-react';
+import { Briefcase, MapPin, Clock, Zap, TrendingUp, ExternalLink } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import CompanyForm from './Companyform';
 import './LiveJobUpdates.css';
 
 const LiveJobUpdates = () => {
+  const { addApplication } = useAuth();
   const [jobs, setJobs] = useState([
     {
       id: 1,
@@ -10,6 +13,7 @@ const LiveJobUpdates = () => {
       company: 'Google',
       location: 'Mountain View, CA',
       source: 'LinkedIn',
+      sourceUrl: 'https://www.linkedin.com/jobs/search/?keywords=Senior%20Frontend%20Developer%20Google',
       posted: '2 hours ago',
       salary: '$150K - $180K',
       hot: true,
@@ -21,6 +25,7 @@ const LiveJobUpdates = () => {
       company: 'Microsoft',
       location: 'Seattle, WA',
       source: 'Indeed',
+      sourceUrl: 'https://www.indeed.com/jobs?q=Full+Stack+Engineer+Microsoft',
       posted: '3 hours ago',
       salary: '$140K - $170K',
       hot: false,
@@ -32,6 +37,7 @@ const LiveJobUpdates = () => {
       company: 'Amazon',
       location: 'New York, NY',
       source: 'LinkedIn',
+      sourceUrl: 'https://www.linkedin.com/jobs/search/?keywords=Backend%20Developer%20Amazon',
       posted: '1 hour ago',
       salary: '$130K - $160K',
       hot: true,
@@ -43,6 +49,7 @@ const LiveJobUpdates = () => {
       company: 'Meta',
       location: 'San Francisco, CA',
       source: 'Glassdoor',
+      sourceUrl: 'https://www.glassdoor.com/Jobs/DevOps-Engineer-Jobs-EI_IE3406.htm',
       posted: '4 hours ago',
       salary: '$120K - $150K',
       hot: false,
@@ -54,6 +61,7 @@ const LiveJobUpdates = () => {
       company: 'Apple',
       location: 'Cupertino, CA',
       source: 'LinkedIn',
+      sourceUrl: 'https://www.linkedin.com/jobs/search/?keywords=React%20Native%20Developer%20Apple',
       posted: '30 minutes ago',
       salary: '$140K - $175K',
       hot: true,
@@ -63,6 +71,8 @@ const LiveJobUpdates = () => {
 
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [showForm, setShowForm] = useState(false);
+  const [selectedJob, setSelectedJob] = useState(null);
 
   useEffect(() => {
     // Simulate live updates
@@ -169,7 +179,16 @@ const LiveJobUpdates = () => {
               <div className="job-main">
                 <div className="job-header">
                   <h3 className="job-title">{job.title}</h3>
-                  <span className="source-tag">{job.source}</span>
+                  <a 
+                    href={job.sourceUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="source-tag source-link"
+                    title={`View on ${job.source}`}
+                  >
+                    {job.source}
+                    <ExternalLink size={14} />
+                  </a>
                 </div>
 
                 <div className="job-company">
@@ -201,8 +220,24 @@ const LiveJobUpdates = () => {
               </div>
 
               <div className="job-actions">
-                <button className="apply-btn">Apply Now</button>
-                <button className="save-btn">💾</button>
+                <button 
+                  className="apply-btn"
+                  onClick={() => {
+                    setSelectedJob(job);
+                    setShowForm(true);
+                  }}
+                >
+                  Apply Now
+                </button>
+                <a 
+                  href={job.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="view-btn"
+                  title="View original job posting"
+                >
+                  🔗
+                </a>
               </div>
             </div>
           ))}
@@ -212,10 +247,27 @@ const LiveJobUpdates = () => {
       {/* View More */}
       <div className="view-more-section">
         <button className="view-more-btn">
-          View More Opportunities
+          Explore More Opportunities
           <span className="arrow">→</span>
         </button>
       </div>
+
+      {/* Application Form */}
+      {showForm && selectedJob && (
+        <CompanyForm 
+          onClose={() => {
+            setShowForm(false);
+            setSelectedJob(null);
+          }} 
+          initialData={{
+            company_name: selectedJob.company,
+            position_title: selectedJob.title,
+            status: 'Applied',
+            notes: `Found on ${selectedJob.source}\nLocation: ${selectedJob.location}\nSalary: ${selectedJob.salary}`,
+            rating: 0
+          }}
+        />
+      )}
     </div>
   );
 };

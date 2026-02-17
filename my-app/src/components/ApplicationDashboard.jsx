@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Calendar, Building, Briefcase, CheckCircle, Clock, AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { Calendar, Building, Briefcase, CheckCircle, Clock, AlertCircle, Plus, Trash2, Edit2 } from 'lucide-react';
+import CompanyForm from './Companyform';
 import './ApplicationDashboard.css';
 
 const ApplicationDashboard = () => {
   const { applications, deleteApplication, fetchApplications } = useAuth();
   const [filter, setFilter] = useState('all');
+  const [showForm, setShowForm] = useState(false);
+  const [editingApplication, setEditingApplication] = useState(null);
   const [stats, setStats] = useState({
     total: 0,
     applied: 0,
@@ -79,10 +82,16 @@ const ApplicationDashboard = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Header */}
+      {/* Header with Add Button */}
       <div className="dashboard-header">
-        <h2 className="dashboard-title">Application Tracker</h2>
-        <p className="dashboard-subtitle">Monitor your job applications in real-time</p>
+        <div>
+          <h2 className="dashboard-title">Application Tracker</h2>
+          <p className="dashboard-subtitle">Monitor your job applications in real-time</p>
+        </div>
+        <button className="add-application-btn" onClick={() => setShowForm(true)}>
+          <Plus size={20} />
+          Add Application
+        </button>
       </div>
 
       {/* Stats Section */}
@@ -199,7 +208,17 @@ const ApplicationDashboard = () => {
                 </div>
 
                 <div className="card-footer">
-                  <button className="card-action-btn">View Details</button>
+                  <button 
+                    className="card-edit-btn"
+                    onClick={() => {
+                      setEditingApplication(app);
+                      setShowForm(true);
+                    }}
+                    title="Edit application"
+                  >
+                    <Edit2 size={18} />
+                    Edit
+                  </button>
                   <button
                     className="card-delete-btn"
                     onClick={() => handleDelete(app.id)}
@@ -217,6 +236,17 @@ const ApplicationDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Add/Edit Application Form */}
+      {showForm && (
+        <CompanyForm 
+          onClose={() => {
+            setShowForm(false);
+            setEditingApplication(null);
+          }} 
+          initialData={editingApplication}
+        />
+      )}
     </div>
   );
 };
