@@ -74,6 +74,7 @@
   padding: 3rem;
   width: 100%;
   max-width: 450px;
+  box-sizing: border-box;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   animation: slideUp 0.8s ease-out;
   max-height: 90vh;
@@ -148,7 +149,8 @@
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
+  width: 100%;
 }
 
 .form-label {
@@ -162,6 +164,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .input-icon {
@@ -169,6 +172,7 @@
   left: 1rem;
   color: rgba(100, 200, 255, 0.6);
   pointer-events: none;
+  z-index: 2;
 }
 
 .form-input {
@@ -180,6 +184,7 @@
   color: white;
   font-size: 1rem;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .form-input::placeholder {
@@ -209,7 +214,8 @@
   align-items: center;
   justify-content: center;
   transition: color 0.3s ease;
-  padding: 0;
+  padding: 0.5rem;
+  z-index: 2;
 }
 
 .eye-button:hover {
