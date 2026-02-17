@@ -28,8 +28,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await applicationsAPI.getAll({ sort: 'recent' });
       setApplications(response.data);
+      return response.data;
     } catch (error) {
       console.error('Failed to fetch applications:', error);
+      return null;
     }
   };
 
@@ -89,7 +91,9 @@ export const AuthProvider = ({ children }) => {
   const addApplication = async (appData) => {
     try {
       const response = await applicationsAPI.create(appData);
-      await fetchApplications();
+      // Immediately update local state with new application
+      const newApplication = response.data.application || response.data;
+      setApplications(prevApps => [newApplication, ...prevApps]);
       return { success: true, data: response.data };
     } catch (error) {
       return {
@@ -102,7 +106,10 @@ export const AuthProvider = ({ children }) => {
   const updateApplication = async (id, updates) => {
     try {
       await applicationsAPI.update(id, updates);
-      await fetchApplications();
+      // Immediately update the application in local state
+      setApplications(prevApps =>
+        prevApps.map(app => app.id === id ? { ...app, ...updates } : app)
+      );
       return { success: true };
     } catch (error) {
       return {
@@ -115,7 +122,8 @@ export const AuthProvider = ({ children }) => {
   const deleteApplication = async (id) => {
     try {
       await applicationsAPI.delete(id);
-      await fetchApplications();
+      // Immediately remove from local state
+      setApplications(prevApps => prevApps.filter(app => app.id !== id));
       return { success: true };
     } catch (error) {
       return {
